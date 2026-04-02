@@ -1,0 +1,27 @@
+spring:
+  application:
+    name: todoapp
+  datasource:
+    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:todoapp}
+    username: ${DB_USER:todoapp}
+    password: ${DB_PASSWORD:todoapp}
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+    out-of-order: true
+
+server:
+  servlet:
+    encoding:
+      charset: UTF-8
+      enabled: true
+      force: true
+
+app:
+  cors:
+    allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:5173,http://localhost:3000}
+  security:
+    jwt:
+      issuer: todoapp
+      secret: ${JWT_SECRET:VGhpc0lzQVN0cm9uZ0RldmVsb3BtZW50U2VjcmV0Rm9yVGhlVG9kb0FwcEFQSR==}
+      expiration: ${JWT_EXPIRATION:PT2H}
