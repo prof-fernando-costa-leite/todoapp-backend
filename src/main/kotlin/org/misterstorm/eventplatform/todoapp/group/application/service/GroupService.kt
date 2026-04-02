@@ -35,7 +35,7 @@ class GroupService(
         val memberIds = request.memberIds + currentUser.userId
         memberIds.forEach {
             if (!userRepository.existsById(it)) {
-                throw NotFoundException("Usuario $it nao encontrado")
+                throw NotFoundException("User $it not found")
             }
         }
 
@@ -57,7 +57,7 @@ class GroupService(
                 ),
             )
         }
-        logger.info("Grupo criado com sucesso")
+        logger.info("Group created successfully")
         return getGroup(group.id)
     }
 
@@ -74,7 +74,7 @@ class GroupService(
     fun getGroup(groupId: UUID): GroupDetailsResponse {
         val currentUser = currentUserProvider.requireCurrentUser()
         ensureMember(groupId, currentUser.userId)
-        val group = groupRepository.findById(groupId) ?: throw NotFoundException("Grupo nao encontrado")
+        val group = groupRepository.findById(groupId) ?: throw NotFoundException("Group not found")
         return GroupDetailsResponse(
             id = group.id,
             name = group.name,
@@ -96,7 +96,7 @@ class GroupService(
         val currentUser = currentUserProvider.requireCurrentUser()
         ensureOwner(groupId, currentUser.userId)
         if (!userRepository.existsById(request.userId)) {
-            throw NotFoundException("Usuario nao encontrado")
+            throw NotFoundException("User not found")
         }
         groupRepository.addMember(
             GroupMemberRecord(
@@ -107,7 +107,7 @@ class GroupService(
                 displayName = null,
             ),
         )
-        logger.info("Membro adicionado ao grupo")
+        logger.info("Member added to group")
         return getGroup(groupId)
     }
 
@@ -116,21 +116,21 @@ class GroupService(
         val currentUser = currentUserProvider.requireCurrentUser()
         ensureOwner(groupId, currentUser.userId)
         if (userId == currentUser.userId) {
-            throw ForbiddenException("O dono do grupo nao pode remover a si mesmo")
+            throw ForbiddenException("The group owner cannot remove themselves")
         }
         groupRepository.removeMember(groupId, userId)
-        logger.info("Membro removido do grupo")
+        logger.info("Member removed from group")
     }
 
     fun ensureMember(groupId: UUID, userId: UUID) {
         if (!groupRepository.isMember(groupId, userId)) {
-            throw ForbiddenException("Usuario nao pertence ao grupo informado")
+            throw ForbiddenException("User does not belong to the provided group")
         }
     }
 
     private fun ensureOwner(groupId: UUID, userId: UUID) {
         if (!groupRepository.isOwner(groupId, userId)) {
-            throw ForbiddenException("Apenas o dono do grupo pode realizar esta acao")
+            throw ForbiddenException("Only the group owner can perform this action")
         }
     }
 }

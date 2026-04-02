@@ -36,20 +36,20 @@ class AuthService(
     fun register(request: RegisterRequest): UserResponse {
         val normalizedEmail = request.email.trim().lowercase()
         if (userRepository.findByEmail(normalizedEmail) != null) {
-            throw ConflictException("Ja existe um usuario com este e-mail")
+            throw ConflictException("A user with this email already exists")
         }
 
         val user = UserRecord(
             id = UUID.randomUUID(),
             email = normalizedEmail,
             passwordHash = requireNotNull(passwordEncoder.encode(request.password)) {
-                "Falha ao gerar hash de senha"
+                "Failed to generate password hash"
             },
             displayName = request.displayName.trim(),
             createdAt = Instant.now(clock),
         )
         userRepository.insert(user)
-        logger.info("Usuario cadastrado com sucesso")
+        logger.info("User registered successfully")
         return user.toResponse()
     }
 
@@ -57,15 +57,15 @@ class AuthService(
         userRepository.findByEmail(request.email.trim().lowercase())
             ?.takeIf { passwordEncoder.matches(request.password, it.passwordHash) }
             ?.let {
-                logger.info("Usuario autenticado com sucesso")
+                logger.info("User authenticated successfully")
                 jwtTokenPort.createToken(it)
             }
-            ?: throw UnauthorizedException("Credenciais invalidas")
+            ?: throw UnauthorizedException("Invalid credentials")
 
     fun me(): UserResponse {
         val currentUser = currentUserProvider.requireCurrentUser()
         val user = userRepository.findById(currentUser.userId)
-            ?: throw UnauthorizedException("Usuario autenticado nao encontrado")
+            ?: throw UnauthorizedException("Authenticated user not found")
         return user.toResponse()
     }
 

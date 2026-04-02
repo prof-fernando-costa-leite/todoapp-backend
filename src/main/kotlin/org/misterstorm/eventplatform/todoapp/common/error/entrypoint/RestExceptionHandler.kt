@@ -31,7 +31,7 @@ class RestExceptionHandler {
             is MethodArgumentNotValidException -> exception.bindingResult.fieldErrors.firstOrNull()?.defaultMessage
             is BindException -> exception.bindingResult.fieldErrors.firstOrNull()?.defaultMessage
             else -> null
-        } ?: "Dados de entrada invalidos"
+        } ?: "Invalid input data"
 
         return buildResponse(HttpStatus.BAD_REQUEST, message, request)
     }
@@ -42,9 +42,9 @@ class RestExceptionHandler {
         request: HttpServletRequest,
     ): ResponseEntity<ErrorResponse> {
         val message = if (exception.message?.contains("statusId", ignoreCase = true) == true) {
-            "statusId e obrigatorio"
+            "statusId is required"
         } else {
-            "Corpo da requisicao invalido"
+            "Invalid request body"
         }
         return buildResponse(HttpStatus.BAD_REQUEST, message, request)
     }
@@ -56,7 +56,7 @@ class RestExceptionHandler {
         request: HttpServletRequest,
     ): ResponseEntity<ErrorResponse> = buildResponse(
         HttpStatus.INTERNAL_SERVER_ERROR,
-        "Erro interno inesperado",
+        "Unexpected internal error",
         request,
     )
 

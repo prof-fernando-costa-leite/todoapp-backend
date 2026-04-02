@@ -72,7 +72,7 @@ class BoardService(
                     BoardTransitionRecord(board.id, done.id, doing.id),
                 ),
             )
-            logger.info("Board criado com statuses padrao e transicoes iniciais")
+            logger.info("Board created with default statuses and initial transitions")
         }
         return getBoard(board.id)
     }
@@ -119,7 +119,7 @@ class BoardService(
         return loggingContextManager.withBoard(boardId) {
             val code = request.code.trim().uppercase()
             if (boardStatusRepository.existsByCode(boardId, code)) {
-                throw ConflictException("Ja existe um status com este codigo no board")
+                throw ConflictException("A status with this code already exists on the board")
             }
             if (request.initial) {
                 boardStatusRepository.clearInitialFlag(boardId)
@@ -137,7 +137,7 @@ class BoardService(
                 createdAt = Instant.now(clock),
             )
             boardStatusRepository.insertStatus(status)
-            logger.info("Novo status customizado criado no board")
+            logger.info("New custom status created on the board")
             status.toResponse()
         }
     }
@@ -150,12 +150,12 @@ class BoardService(
         return loggingContextManager.withBoard(boardId) {
             val statuses = boardStatusRepository.listByBoard(boardId).associateBy { it.id }
             val transitions = request.transitions.map {
-                val from = statuses[it.fromStatusId] ?: throw NotFoundException("Status de origem nao encontrado no board")
-                val to = statuses[it.toStatusId] ?: throw NotFoundException("Status de destino nao encontrado no board")
+                val from = statuses[it.fromStatusId] ?: throw NotFoundException("Source status not found on the board")
+                val to = statuses[it.toStatusId] ?: throw NotFoundException("Destination status not found on the board")
                 BoardTransitionRecord(boardId = boardId, fromStatusId = from.id, toStatusId = to.id)
             }
             boardStatusRepository.replaceTransitions(boardId, transitions)
-            logger.info("Regras de transicao do board substituidas")
+            logger.info("Board transition rules replaced")
             transitions.map { BoardTransitionResponse(it.fromStatusId, it.toStatusId) }
         }
     }
@@ -168,18 +168,18 @@ class BoardService(
         loggingContextManager.withBoard(boardId) {
             val status = boardStatusRepository.findById(statusId)
                 ?.takeIf { it.boardId == boardId }
-                ?: throw NotFoundException("Status nao encontrado")
+                ?: throw NotFoundException("Status not found")
             if (status.kind == StatusKind.SYSTEM) {
-                throw ForbiddenException("Statuses padrao do sistema nao podem ser removidos")
+                throw ForbiddenException("System default statuses cannot be removed")
             }
             if (status.isInitial) {
-                throw ForbiddenException("Status inicial nao pode ser removido")
+                throw ForbiddenException("Initial status cannot be removed")
             }
             if (boardStatusRepository.countTasksUsingStatus(statusId) > 0) {
-                throw ConflictException("Nao e possivel remover um status em uso por tasks")
+                throw ConflictException("Cannot remove a status that is being used by tasks")
             }
             boardStatusRepository.deleteStatus(statusId)
-            logger.info("Status removido do board")
+            logger.info("Status removed from board")
         }
     }
 
@@ -190,18 +190,18 @@ class BoardService(
         ensureGroupMember(board.groupId, currentUser.userId)
         loggingContextManager.withBoard(boardId) {
             boardRepository.deleteById(boardId)
-            logger.info("Board removido")
+            logger.info("Board removed")
         }
     }
 
     fun findBoardOrThrow(boardId: UUID): BoardRecord = boardRepository.findById(boardId)
-        ?: throw NotFoundException("Board nao encontrado")
+        ?: throw NotFoundException("Board not found")
 
     fun findStatusOrThrow(statusId: UUID): BoardStatusRecord = boardStatusRepository.findById(statusId)
-        ?: throw NotFoundException("Status nao encontrado")
+        ?: throw NotFoundException("Status not found")
 
     fun findInitialStatus(boardId: UUID): BoardStatusRecord = boardStatusRepository.findInitialByBoard(boardId)
-        ?: throw NotFoundException("Board sem status inicial configurado")
+        ?: throw NotFoundException("Board without initial status configured")
 
     fun hasTransition(boardId: UUID, fromStatusId: UUID, toStatusId: UUID): Boolean =
         boardStatusRepository.hasTransition(boardId, fromStatusId, toStatusId)
@@ -226,7 +226,7 @@ class BoardService(
 
     private fun ensureGroupMember(groupId: UUID, userId: UUID) {
         if (!groupRepository.isMember(groupId, userId)) {
-            throw ForbiddenException("Usuario nao pertence ao grupo do board")
+            throw ForbiddenException("User does not belong to the board's group")
         }
     }
 

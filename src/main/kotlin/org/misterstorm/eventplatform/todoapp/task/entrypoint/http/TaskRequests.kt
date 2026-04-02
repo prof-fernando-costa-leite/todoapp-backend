@@ -9,28 +9,28 @@ import org.misterstorm.eventplatform.todoapp.task.domain.TaskPriority
 import java.util.UUID
 
 data class CreateTaskRequest(
-    @field:NotBlank(message = "Titulo e obrigatorio")
-    @field:Size(min = 3, max = 200, message = "Titulo deve ter entre 3 e 200 caracteres")
+    @field:NotBlank(message = "Title is required")
+    @field:Size(min = 3, max = 200, message = "Title must be between 3 and 200 characters")
     val title: String,
-    @field:Size(max = 2000, message = "Descricao deve ter no maximo 2000 caracteres")
+    @field:Size(max = 2000, message = "Description must have at most 2000 characters")
     val description: String? = null,
     val assigneeId: UUID? = null,
-    @field:Min(value = 0, message = "Pontuacao deve ser no minimo 0")
-    @field:Max(value = 1000, message = "Pontuacao deve ser no maximo 1000")
+    @field:Min(value = 0, message = "Points must be at least 0")
+    @field:Max(value = 1000, message = "Points must be at most 1000")
     val points: Int? = null,
     val priority: TaskPriority = TaskPriority.MEDIUM,
     val blockerTaskId: UUID? = null,
 )
 
 class UpdateTaskRequest {
-    @field:Size(min = 3, max = 200, message = "Titulo deve ter entre 3 e 200 caracteres")
+    @field:Size(min = 3, max = 200, message = "Title must be between 3 and 200 characters")
     var title: String? = null
 
-    @field:Size(max = 2000, message = "Descricao deve ter no maximo 2000 caracteres")
+    @field:Size(max = 2000, message = "Description must have at most 2000 characters")
     var description: String? = null
 
-    @field:Min(value = 0, message = "Pontuacao deve ser no minimo 0")
-    @field:Max(value = 1000, message = "Pontuacao deve ser no maximo 1000")
+    @field:Min(value = 0, message = "Points must be at least 0")
+    @field:Max(value = 1000, message = "Points must be at most 1000")
     var points: Int? = null
 
     var priority: TaskPriority? = null
@@ -55,7 +55,7 @@ class UpdateTaskRequest {
 }
 
 data class ChangeTaskStatusRequest(
-    @field:NotNull(message = "statusId e obrigatorio")
+    @field:NotNull(message = "statusId is required")
     val statusId: UUID? = null,
 )
 

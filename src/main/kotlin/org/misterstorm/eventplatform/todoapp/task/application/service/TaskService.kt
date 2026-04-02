@@ -47,10 +47,10 @@ class TaskService(
         ensureBoardMember(board.groupId, currentUser.userId)
         request.assigneeId?.let { ensureAssignableUser(board.groupId, it) }
         val blockerTask = request.blockerTaskId?.let { blockerId ->
-            taskRepository.findById(blockerId) ?: throw NotFoundException("Task bloqueante nao encontrada")
+            taskRepository.findById(blockerId) ?: throw NotFoundException("Blocking task not found")
         }
         if (blockerTask != null && blockerTask.boardId != boardId) {
-            throw ValidationException("A task bloqueante deve pertencer ao mesmo board")
+            throw ValidationException("The blocking task must belong to the same board")
         }
 
         val initialStatus = boardService.findInitialStatus(boardId)
@@ -81,7 +81,7 @@ class TaskService(
                     changedAt = now,
                 ),
             )
-            logger.info("Task criada no board")
+            logger.info("Task created on board")
         }
         return getTask(task.id)
     }
@@ -102,7 +102,7 @@ class TaskService(
 
     fun getTask(taskId: UUID): TaskResponse {
         val currentUser = currentUserProvider.requireCurrentUser()
-        val task = taskRepository.findById(taskId) ?: throw NotFoundException("Task nao encontrada")
+        val task = taskRepository.findById(taskId) ?: throw NotFoundException("Task not found")
         ensureTaskReadable(currentUser.userId, task)
         return loggingContextManager.withBoard(task.boardId) { task.toResponse() }
     }
@@ -110,7 +110,7 @@ class TaskService(
     @Transactional
     fun updateTask(taskId: UUID, request: UpdateTaskRequest): TaskResponse {
         val currentUser = currentUserProvider.requireCurrentUser()
-        val task = taskRepository.findById(taskId) ?: throw NotFoundException("Task nao encontrada")
+        val task = taskRepository.findById(taskId) ?: throw NotFoundException("Task not found")
         ensureTaskManageable(currentUser.userId, task)
         val now = Instant.now(clock)
         loggingContextManager.withBoard(task.boardId) {
@@ -131,18 +131,18 @@ class TaskService(
             if (request.blockerTaskIdProvided) {
                 val blockerId = request.blockerTaskId
                 if (blockerId == taskId) {
-                    throw ValidationException("Uma task nao pode bloquear a si mesma")
+                    throw ValidationException("A task cannot block itself")
                 }
                 blockerId?.let {
-                    val blocker = taskRepository.findById(it) ?: throw NotFoundException("Task bloqueante nao encontrada")
+                    val blocker = taskRepository.findById(it) ?: throw NotFoundException("Blocking task not found")
                     if (blocker.boardId != task.boardId) {
-                        throw ValidationException("A task bloqueante deve pertencer ao mesmo board")
+                        throw ValidationException("The blocking task must belong to the same board")
                     }
                 }
                 taskRepository.updateBlocker(taskId, blockerId, now)
             }
 
-            logger.info("Task atualizada")
+            logger.info("Task updated")
         }
         return getTask(taskId)
     }
@@ -150,9 +150,9 @@ class TaskService(
     @Transactional
     fun changeStatus(taskId: UUID, request: ChangeTaskStatusRequest): TaskResponse {
         val currentUser = currentUserProvider.requireCurrentUser()
-        val task = taskRepository.findById(taskId) ?: throw NotFoundException("Task nao encontrada")
+        val task = taskRepository.findById(taskId) ?: throw NotFoundException("Task not found")
         ensureTaskManageable(currentUser.userId, task)
-        val statusId = request.statusId ?: throw ValidationException("statusId e obrigatorio")
+        val statusId = request.statusId ?: throw ValidationException("statusId is required")
         val targetStatus = workflowService.validateStatusChange(task, statusId)
         val now = Instant.now(clock)
         loggingContextManager.withBoard(task.boardId) {
@@ -167,7 +167,7 @@ class TaskService(
                     changedAt = now,
                 ),
             )
-            logger.info("Status da task alterado")
+            logger.info("Task status changed")
         }
         return getTask(taskId)
     }
@@ -175,13 +175,13 @@ class TaskService(
     @Transactional
     fun updateAssignee(taskId: UUID, request: UpdateTaskAssigneeRequest): TaskResponse {
         val currentUser = currentUserProvider.requireCurrentUser()
-        val task = taskRepository.findById(taskId) ?: throw NotFoundException("Task nao encontrada")
+        val task = taskRepository.findById(taskId) ?: throw NotFoundException("Task not found")
         ensureTaskManageable(currentUser.userId, task)
         request.assigneeId?.let { ensureAssignableUser(task.groupId, it) }
         val now = Instant.now(clock)
         loggingContextManager.withBoard(task.boardId) {
             taskRepository.updateAssignee(taskId, request.assigneeId, now)
-            logger.info("Responsavel da task alterado")
+            logger.info("Task assignee changed")
         }
         return getTask(taskId)
     }
@@ -189,29 +189,29 @@ class TaskService(
     @Transactional
     fun updateBlocker(taskId: UUID, request: UpdateTaskBlockerRequest): TaskResponse {
         val currentUser = currentUserProvider.requireCurrentUser()
-        val task = taskRepository.findById(taskId) ?: throw NotFoundException("Task nao encontrada")
+        val task = taskRepository.findById(taskId) ?: throw NotFoundException("Task not found")
         ensureTaskManageable(currentUser.userId, task)
         val blockerId = request.blockerTaskId
         if (blockerId == taskId) {
-            throw ValidationException("Uma task nao pode bloquear a si mesma")
+            throw ValidationException("A task cannot block itself")
         }
         blockerId?.let {
-            val blocker = taskRepository.findById(it) ?: throw NotFoundException("Task bloqueante nao encontrada")
+            val blocker = taskRepository.findById(it) ?: throw NotFoundException("Blocking task not found")
             if (blocker.boardId != task.boardId) {
-                throw ValidationException("A task bloqueante deve pertencer ao mesmo board")
+                throw ValidationException("The blocking task must belong to the same board")
             }
         }
         val now = Instant.now(clock)
         loggingContextManager.withBoard(task.boardId) {
             taskRepository.updateBlocker(taskId, blockerId, now)
-            logger.info("Task bloqueante alterada")
+            logger.info("Task blocker changed")
         }
         return getTask(taskId)
     }
 
     fun getHistory(taskId: UUID): List<TaskHistoryResponse> {
         val currentUser = currentUserProvider.requireCurrentUser()
-        val task = taskRepository.findById(taskId) ?: throw NotFoundException("Task nao encontrada")
+        val task = taskRepository.findById(taskId) ?: throw NotFoundException("Task not found")
         ensureTaskReadable(currentUser.userId, task)
         return loggingContextManager.withBoard(task.boardId) {
             taskRepository.listHistory(taskId).map {
@@ -231,40 +231,40 @@ class TaskService(
     @Transactional
     fun deleteTask(taskId: UUID) {
         val currentUser = currentUserProvider.requireCurrentUser()
-        val task = taskRepository.findById(taskId) ?: throw NotFoundException("Task nao encontrada")
+        val task = taskRepository.findById(taskId) ?: throw NotFoundException("Task not found")
         ensureTaskManageable(currentUser.userId, task)
         val now = Instant.now(clock)
         loggingContextManager.withBoard(task.boardId) {
             taskRepository.clearBlockerReferences(taskId, now)
             taskRepository.deleteById(taskId)
-            logger.info("Task removida do board")
+            logger.info("Task removed from board")
         }
     }
 
     private fun ensureAssignableUser(groupId: UUID, assigneeId: UUID) {
         if (!userRepository.existsById(assigneeId)) {
-            throw NotFoundException("Usuario responsavel nao encontrado")
+            throw NotFoundException("Assignee user not found")
         }
         if (!groupRepository.isMember(groupId, assigneeId)) {
-            throw ValidationException("O responsavel deve pertencer ao grupo do board")
+            throw ValidationException("The assignee must belong to the board's group")
         }
     }
 
     private fun ensureBoardMember(groupId: UUID, userId: UUID) {
         if (!groupRepository.isMember(groupId, userId)) {
-            throw ForbiddenException("Usuario nao pertence ao grupo do board")
+            throw ForbiddenException("User does not belong to the board's group")
         }
     }
 
     private fun ensureTaskReadable(userId: UUID, task: TaskDetails) {
         if (!canReadTask(userId, task)) {
-            throw ForbiddenException("Usuario nao pode visualizar esta task")
+            throw ForbiddenException("User cannot view this task")
         }
     }
 
     private fun ensureTaskManageable(userId: UUID, task: TaskDetails) {
         if (!groupRepository.isMember(task.groupId, userId)) {
-            throw ForbiddenException("Somente membros do grupo podem alterar tasks do board")
+            throw ForbiddenException("Only group members can modify tasks on the board")
         }
     }
 

@@ -1,8 +1,8 @@
-# TodoApp — Documentação da API
+# TodoApp API Documentation
 
 Base URL: `http://localhost:8080/api/v1`
 
-Todos os endpoints (exceto `POST /auth/register` e `POST /auth/login`) exigem o header:
+All endpoints (except `POST /auth/register` and `POST /auth/login`) require the header:
 
 ```
 Authorization: Bearer <accessToken>
@@ -10,35 +10,35 @@ Authorization: Bearer <accessToken>
 
 ---
 
-## Formato de erro padrão
+## Standard Error Format
 
-Todos os erros retornam:
+All errors return:
 
 ```json
 {
   "timestamp": "2026-04-01T10:00:00Z",
   "status": 409,
   "error": "Conflict",
-  "message": "Descrição do problema",
+  "message": "Problem description",
   "path": "/api/v1/...",
-  "actionId": "uuid-opcional"
+  "actionId": "optional-uuid"
 }
 ```
 
-| Status | Significado                              |
+| Status | Meaning                                  |
 |--------|------------------------------------------|
-| 400    | Validação de entrada falhou              |
-| 401    | Token ausente, inválido ou expirado      |
-| 403    | Usuário não tem permissão                |
-| 404    | Recurso não encontrado                   |
-| 409    | Conflito de negócio (ex: bloqueio ativo) |
-| 500    | Erro interno inesperado                  |
+| 400    | Input validation failed                  |
+| 401    | Token missing, invalid or expired        |
+| 403    | User does not have permission            |
+| 404    | Resource not found                       |
+| 409    | Business conflict (e.g. active blocker)  |
+| 500    | Unexpected internal error                |
 
 ---
 
 ## Auth
 
-### Registrar usuário
+### Register user
 ```
 POST /auth/register
 ```
@@ -48,11 +48,11 @@ POST /auth/register
 {
   "email": "alice@example.com",
   "displayName": "Alice",
-  "password": "MinhaSenh@123"
+  "password": "MyPassword@123"
 }
 ```
 
-**Resposta 201:**
+**Response 201:**
 ```json
 {
   "id": "uuid",
@@ -73,11 +73,11 @@ POST /auth/login
 ```json
 {
   "email": "alice@example.com",
-  "password": "MinhaSenh@123"
+  "password": "MyPassword@123"
 }
 ```
 
-**Resposta 200:**
+**Response 200:**
 ```json
 {
   "accessToken": "eyJ...",
@@ -91,27 +91,27 @@ POST /auth/login
 }
 ```
 
-> Salve `accessToken` e envie em todas as requisições autenticadas.
+> Save the `accessToken` and send it with all authenticated requests.
 
 ---
 
-### Perfil do usuário autenticado
+### Authenticated user profile
 ```
 GET /auth/me
 ```
 
-**Resposta 200:** igual ao objeto `user` do login.
+**Response 200:** Same as the `user` object from login.
 
 ---
 
-### Listar usuários para seleção de membros
+### List users for member selection
 ```
 GET /auth/users
 ```
 
-Retorna todos os usuários cadastrados com payload enxuto para selects/autocomplete no frontend.
+Returns all registered users with a lightweight payload for selects/autocomplete in the frontend.
 
-**Resposta 200:**
+**Response 200:**
 ```json
 [
   { "id": "uuid-owner", "displayName": "Alice" },
@@ -123,9 +123,9 @@ Retorna todos os usuários cadastrados com payload enxuto para selects/autocompl
 
 ## Groups
 
-Um grupo é uma equipe. Apenas membros do grupo acessam seus boards e tasks.
+A group is a team. Only group members can access its boards and tasks.
 
-### Criar grupo
+### Create group
 ```
 POST /groups
 ```
@@ -133,28 +133,28 @@ POST /groups
 **Body:**
 ```json
 {
-  "name": "Time de Produto",
-  "memberIds": ["uuid-usuario-b", "uuid-usuario-c"]
+  "name": "Product Team",
+  "memberIds": ["uuid-user-b", "uuid-user-c"]
 }
 ```
 
-> O criador vira automaticamente `OWNER`. Os IDs informados em `memberIds` entram como `MEMBER`.
+> The creator automatically becomes `OWNER`. The IDs provided in `memberIds` join as `MEMBER`.
 
-**Resposta 201:** `GroupDetailsResponse` (ver abaixo)
+**Response 201:** `GroupDetailsResponse` (see below)
 
 ---
 
-### Listar grupos do usuário autenticado
+### List authenticated user's groups
 ```
 GET /groups
 ```
 
-**Resposta 200:**
+**Response 200:**
 ```json
 [
   {
     "id": "uuid",
-    "name": "Time de Produto",
+    "name": "Product Team",
     "createdBy": "uuid",
     "createdAt": "2026-04-01T10:00:00Z"
   }
@@ -163,16 +163,16 @@ GET /groups
 
 ---
 
-### Detalhe de um grupo
+### Group details
 ```
 GET /groups/{groupId}
 ```
 
-**Resposta 200:**
+**Response 200:**
 ```json
 {
   "id": "uuid",
-  "name": "Time de Produto",
+  "name": "Product Team",
   "createdBy": "uuid",
   "createdAt": "2026-04-01T10:00:00Z",
   "members": [
@@ -184,38 +184,38 @@ GET /groups/{groupId}
 
 ---
 
-### Adicionar membro
+### Add member
 ```
 POST /groups/{groupId}/members
 ```
 
 **Body:**
 ```json
-{ "userId": "uuid-do-usuario" }
+{ "userId": "user-uuid" }
 ```
 
-> Somente o `OWNER` pode adicionar membros.
+> Only the `OWNER` can add members.
 
-**Resposta 200:** `GroupDetailsResponse` atualizado.
+**Response 200:** Updated `GroupDetailsResponse`.
 
 ---
 
-### Remover membro
+### Remove member
 ```
 DELETE /groups/{groupId}/members/{userId}
 ```
 
-> Somente o `OWNER` pode remover. O dono não pode remover a si mesmo.
+> Only the `OWNER` can remove. The owner cannot remove themselves.
 
-**Resposta 204** (sem body)
+**Response 204** (no body)
 
 ---
 
 ## Boards
 
-Um board pertence a um grupo. Ao ser criado, ganha automaticamente 4 statuses padrão (`TODO`, `BLOCKED`, `DOING`, `DONE`) e as transições iniciais entre eles.
+A board belongs to a group. When created, it automatically gets 4 default statuses (`TODO`, `BLOCKED`, `DOING`, `DONE`) and initial transitions between them.
 
-### Criar board
+### Create board
 ```
 POST /groups/{groupId}/boards
 ```
@@ -224,11 +224,11 @@ POST /groups/{groupId}/boards
 ```json
 {
   "name": "Sprint 1",
-  "description": "Opcional"
+  "description": "Optional"
 }
 ```
 
-**Resposta 201:** `BoardDetailsResponse` com statuses e transições já criados.
+**Response 201:** `BoardDetailsResponse` with statuses and transitions already created.
 
 ```json
 {
@@ -295,39 +295,39 @@ POST /groups/{groupId}/boards
 
 ---
 
-### Listar boards de um grupo
+### List group boards
 ```
 GET /groups/{groupId}/boards
 ```
 
-**Resposta 200:** lista de `BoardResponse` (sem statuses/transições).
+**Response 200:** List of `BoardResponse` (without statuses/transitions).
 
 ---
 
-### Detalhe de um board
+### Board details
 ```
 GET /boards/{boardId}
 ```
 
-**Resposta 200:** `BoardDetailsResponse` completo (igual ao retorno do create, incluindo `members`).
+**Response 200:** Complete `BoardDetailsResponse` (same as create response, including `members`).
 
 ---
 
-### Listar statuses de um board
+### List board statuses
 ```
 GET /boards/{boardId}/statuses
 ```
 
-**Resposta 200:** lista de `BoardStatusResponse`.
+**Response 200:** List of `BoardStatusResponse`.
 
 ---
 
-### Listar transições de um board
+### List board transitions
 ```
 GET /boards/{boardId}/transitions
 ```
 
-**Resposta 200:**
+**Response 200:**
 ```json
 [
   { "fromStatusId": "uuid", "toStatusId": "uuid" }
@@ -336,7 +336,7 @@ GET /boards/{boardId}/transitions
 
 ---
 
-### Criar status customizado
+### Create custom status
 ```
 POST /boards/{boardId}/statuses
 ```
@@ -345,20 +345,20 @@ POST /boards/{boardId}/statuses
 ```json
 {
   "code": "REVIEW",
-  "name": "Em Revisão",
+  "name": "In Review",
   "rank": 25,
   "initial": false,
   "terminal": false
 }
 ```
 
-> Statuses `SYSTEM` não podem ser removidos. Se `initial: true`, o flag é removido do status anterior automaticamente.
+> `SYSTEM` statuses cannot be removed. If `initial: true`, the flag is removed from the previous status automatically.
 
-**Resposta 201:** `BoardStatusResponse`
+**Response 201:** `BoardStatusResponse`
 
 ---
 
-### Substituir transições de um board
+### Replace board transitions
 ```
 PUT /boards/{boardId}/transitions
 ```
@@ -374,39 +374,39 @@ PUT /boards/{boardId}/transitions
 }
 ```
 
-> Substitui **todas** as transições existentes do board de uma vez.
+> Replaces **all** existing board transitions at once.
 
-**Resposta 200:** lista atualizada de `BoardTransitionResponse`.
+**Response 200:** Updated list of `BoardTransitionResponse`.
 
 ---
 
-### Remover status customizado
+### Delete custom status
 ```
 DELETE /boards/{boardId}/statuses/{statusId}
 ```
 
-> Falha com `403` se for status `SYSTEM` ou `initial`.  
-> Falha com `409` se houver tasks usando o status.
+> Fails with `403` if it's a `SYSTEM` status or `initial`.  
+> Fails with `409` if there are tasks using the status.
 
-**Resposta 204** (sem body)
+**Response 204** (no body)
 
 ---
 
-### Remover board
+### Delete board
 ```
 DELETE /boards/{boardId}
 ```
 
-> Apenas membros do grupo podem remover o board.  
-> A remoção é em cascata (statuses, transições, tasks e histórico das tasks do board).
+> Only group members can delete the board.  
+> Deletion is cascading (statuses, transitions, tasks and task history).
 
-**Resposta 204** (sem body)
+**Response 204** (no body)
 
 ---
 
 ## Tasks
 
-### Criar task
+### Create task
 ```
 POST /boards/{boardId}/tasks
 ```
@@ -414,20 +414,20 @@ POST /boards/{boardId}/tasks
 **Body:**
 ```json
 {
-  "title": "Implementar tela de login",
-  "description": "Opcional, até 2000 caracteres",
-  "assigneeId": "uuid-opcional",
+  "title": "Implement login screen",
+  "description": "Optional, up to 2000 characters",
+  "assigneeId": "optional-uuid",
   "points": 5,
   "priority": "HIGH",
-  "blockerTaskId": "uuid-opcional"
+  "blockerTaskId": "optional-uuid"
 }
 ```
 
 > `priority`: `LOW` | `MEDIUM` | `HIGH` | `CRITICAL`  
-> A task nasce no status `initial` do board.  
-> O `assigneeId` e o `blockerTaskId` devem pertencer ao mesmo grupo/board.
+> The task is created in the board's `initial` status.  
+> The `assigneeId` and `blockerTaskId` must belong to the same group/board.
 
-**Resposta 201:** `TaskResponse`
+**Response 201:** `TaskResponse`
 
 ```json
 {
@@ -437,7 +437,7 @@ POST /boards/{boardId}/tasks
   "creatorDisplayName": "Alice",
   "assigneeId": null,
   "assigneeDisplayName": null,
-  "title": "Implementar tela de login",
+  "title": "Implement login screen",
   "description": null,
   "createdAt": "2026-04-01T10:00:00Z",
   "updatedAt": "2026-04-01T10:00:00Z",
@@ -456,114 +456,114 @@ POST /boards/{boardId}/tasks
 
 ---
 
-### Listar tasks de um board
+### List board tasks
 ```
 GET /boards/{boardId}/tasks
 ```
 
-**Resposta 200:** lista de `TaskResponse`.
+**Response 200:** List of `TaskResponse`.
 
-> `TaskResponse` inclui `creatorDisplayName` (sempre preenchido) e `assigneeDisplayName` (nulo quando não há responsável).
+> `TaskResponse` includes `creatorDisplayName` (always filled) and `assigneeDisplayName` (null when there is no assignee).
 
 ---
 
-### Minhas tasks
+### My tasks
 ```
 GET /tasks/mine
 ```
 
-> Retorna tasks onde o usuário autenticado é criador ou responsável.
+> Returns tasks where the authenticated user is the creator or assignee.
 
-**Resposta 200:** lista de `TaskResponse`.
+**Response 200:** List of `TaskResponse`.
 
 ---
 
-### Detalhe de uma task
+### Task details
 ```
 GET /tasks/{taskId}
 ```
 
-**Resposta 200:** `TaskResponse`.
+**Response 200:** `TaskResponse`.
 
 ---
 
-### Atualizar dados da task
+### Update task data
 ```
 PATCH /tasks/{taskId}
 ```
 
-**Body** (todos opcionais):
+**Body** (all optional):
 ```json
 {
-  "title": "Novo título",
-  "description": "Nova descrição",
+  "title": "New title",
+  "description": "New description",
   "points": 8,
   "priority": "CRITICAL"
 }
 ```
 
-**Resposta 200:** `TaskResponse` atualizado.
+**Response 200:** Updated `TaskResponse`.
 
 ---
 
-### Mudar status da task
+### Change task status
 ```
 PATCH /tasks/{taskId}/status
 ```
 
 **Body:**
 ```json
-{ "statusId": "uuid-do-status-destino" }
+{ "statusId": "destination-status-uuid" }
 ```
 
-**Regras de negócio:**
-- A transição precisa existir no board (configurada em `PUT /boards/{boardId}/transitions`).
-- Se a task tiver um `blockerTaskId` apontando para uma task **não terminal**, ela **não pode avançar** para um status com rank maior (retorna `409`).
-- Se a task já estiver no status informado, retorna `400`.
+**Business rules:**
+- The transition must exist on the board (configured in `PUT /boards/{boardId}/transitions`).
+- If the task has a `blockerTaskId` pointing to a **non-terminal** task, it **cannot advance** to a status with higher rank (returns `409`).
+- If the task is already in the informed status, returns `400`.
 
-**Resposta 200:** `TaskResponse` atualizado.
+**Response 200:** Updated `TaskResponse`.
 
 ---
 
-### Alterar responsável da task
+### Change task assignee
 ```
 PATCH /tasks/{taskId}/assignee
 ```
 
 **Body:**
 ```json
-{ "assigneeId": "uuid-ou-null" }
+{ "assigneeId": "uuid-or-null" }
 ```
 
-> Enviar `null` remove o responsável. O responsável deve ser membro do grupo.
+> Send `null` to remove the assignee. The assignee must be a group member.
 
-**Resposta 200:** `TaskResponse` atualizado.
+**Response 200:** Updated `TaskResponse`.
 
 ---
 
-### Alterar task bloqueante
+### Change blocking task
 ```
 PATCH /tasks/{taskId}/blocker
 ```
 
 **Body:**
 ```json
-{ "blockerTaskId": "uuid-ou-null" }
+{ "blockerTaskId": "uuid-or-null" }
 ```
 
-> Enviar `null` remove o bloqueio. A bloqueante deve pertencer ao mesmo board.  
-> Uma task não pode bloquear a si mesma.
+> Send `null` to remove the blocker. The blocking task must belong to the same board.  
+> A task cannot block itself.
 
-**Resposta 200:** `TaskResponse` atualizado.
+**Response 200:** Updated `TaskResponse`.
 
 ---
 
-### Histórico de status de uma task
+### Task status history
 ```
 GET /tasks/{taskId}/history
 ```
 
-**Resposta 200:**
+**Response 200:**
 ```json
 [
   {
@@ -589,82 +589,82 @@ GET /tasks/{taskId}/history
 
 ---
 
-### Remover task
+### Delete task
 ```
 DELETE /tasks/{taskId}
 ```
 
-> Apenas membros do grupo podem remover a task.  
-> Se outras tasks apontarem para ela em `blockerTaskId`, o vínculo é removido automaticamente.
+> Only group members can delete the task.  
+> If other tasks point to it in `blockerTaskId`, the link is automatically removed.
 
-**Resposta 204** (sem body)
+**Response 204** (no body)
 
 ---
 
-## Fluxos principais
+## Main Flows
 
-### 1. Cadastro e login
+### 1. Registration and login
 ```
-POST /auth/register → POST /auth/login → salvar accessToken → todas as demais chamadas
+POST /auth/register → POST /auth/login → save accessToken → all other calls
 ```
 
-### 2. Criar equipe e board
+### 2. Create team and board
 ```
-POST /groups  (com memberIds dos colegas)
+POST /groups  (with memberIds of colleagues)
   └─ POST /groups/{groupId}/boards
-       └─ board criado com 4 statuses padrão e transições automáticas
+       └─ board created with 4 default statuses and automatic transitions
 ```
 
-### 3. Trabalhar com tasks
+### 3. Work with tasks
 ```
-POST /boards/{boardId}/tasks          → task criada em TODO
-PATCH /tasks/{taskId}/status          → mover para DOING (verifica bloqueio)
-PATCH /tasks/{taskId}/status          → mover para DONE  (verifica bloqueio)
-GET  /tasks/{taskId}/history          → ver todo o histórico de status
+POST /boards/{boardId}/tasks          → task created in TODO
+PATCH /tasks/{taskId}/status          → move to DOING (checks blocking)
+PATCH /tasks/{taskId}/status          → move to DONE (checks blocking)
+GET  /tasks/{taskId}/history          → see full status history
 ```
 
-### 4. Bloqueio entre tasks
+### 4. Blocking between tasks
 ```
-POST /boards/{boardId}/tasks  (task A, sem bloqueio)
-POST /boards/{boardId}/tasks  (task B, blockerTaskId = id da task A)
+POST /boards/{boardId}/tasks  (task A, no blocking)
+POST /boards/{boardId}/tasks  (task B, blockerTaskId = task A id)
 
 PATCH /tasks/{taskB}/status { statusId: uuid-doing }
-  → 409: task B está bloqueada pela task A que está aberta
+  → 409: task B is blocked by task A which is open
 
 PATCH /tasks/{taskA}/status { statusId: uuid-done }
-  → 200: task A concluída (terminal)
+  → 200: task A completed (terminal)
 
 PATCH /tasks/{taskB}/status { statusId: uuid-doing }
-  → 200: bloqueio liberado
+  → 200: blocking released
 ```
 
-### 5. Gerenciar equipe
+### 5. Manage team
 ```
-POST   /groups/{groupId}/members            → adicionar membro (somente OWNER)
-DELETE /groups/{groupId}/members/{userId}   → remover membro  (somente OWNER)
+POST   /groups/{groupId}/members            → add member (OWNER only)
+DELETE /groups/{groupId}/members/{userId}   → remove member (OWNER only)
 ```
 
-### 6. Customizar workflow
+### 6. Customize workflow
 ```
-POST /boards/{boardId}/statuses              → criar status REVIEW (rank 25)
-PUT  /boards/{boardId}/transitions           → redefinir transições com REVIEW
-DELETE /boards/{boardId}/statuses/{statusId} → remover status customizado (se não usado)
+POST /boards/{boardId}/statuses              → create REVIEW status (rank 25)
+PUT  /boards/{boardId}/transitions           → redefine transitions with REVIEW
+DELETE /boards/{boardId}/statuses/{statusId} → remove custom status (if not used)
 ```
 
 ---
 
-## Resumo de permissões
+## Permissions Summary
 
-| Ação                         | Quem pode                        |
-|------------------------------|----------------------------------|
-| Criar grupo                  | Qualquer usuário autenticado     |
-| Ver grupo / board / task     | Membros do grupo                 |
-| Adicionar / remover membro   | Somente OWNER do grupo           |
-| Criar board                  | Membros do grupo                 |
-| Criar / editar task          | Membros do grupo                 |
-| Remover task                 | Membros do grupo                 |
-| Remover board                | Membros do grupo                 |
-| Mudar status da task         | Membros do grupo                 |
-| Remover status customizado   | Membros do grupo (sem tasks)     |
-| Ver minhas tasks             | Usuário autenticado (criador/responsável) |
+| Action                      | Who can                          |
+|-----------------------------|----------------------------------|
+| Create group                | Any authenticated user           |
+| View group / board / task   | Group members                    |
+| Add / remove member         | Group `OWNER` only               |
+| Create board                | Group members                    |
+| Create / edit task          | Group members                    |
+| Delete task                 | Group members                    |
+| Delete board                | Group members                    |
+| Change task status          | Group members                    |
+| Delete custom status        | Group members (no tasks using it)|
+| View my tasks               | Authenticated user (creator/assignee) |
 
