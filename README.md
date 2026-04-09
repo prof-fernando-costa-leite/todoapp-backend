@@ -26,7 +26,7 @@ Kotlin + Spring Boot 4 API for collaborative task management with groups, boards
 cd /home/mister-storm/development/projects/todoapp
 
 # Start PostgreSQL container
-docker-compose up -d
+docker compose up -d
 
 # Run tests
 ./gradlew clean test
